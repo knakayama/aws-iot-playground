@@ -1,0 +1,19 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: IoT Rule Lambda Stack
+
+Parameters:
+  InfraStackName:
+    Type: String
+    Default: iot-rule-infra
+
+# FIXME: not work
+Resources:
+  QueryHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-function
+      CodeUri: src/handlers/query_handler
+      Handler: index.handler
+      Runtime: python3.6

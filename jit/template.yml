@@ -1,0 +1,38 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: JIT - Infra
+
+Resources:
+  LambdaJitRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: !Sub /${AWS::StackName}/
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-lambda-jit-role-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iot:UpdateCertificate
+                  - iot:CreatePolicy
+                  - iot:AttachPolicy
+                  - iot:ListPolicies
+                Resource: "*"
+
+Outputs:
+  LambdaJitRoleArn:
+    Value: !GetAtt LambdaJitRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaJitRoleArn

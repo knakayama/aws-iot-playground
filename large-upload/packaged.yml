@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Large Upload - AWS SAM Stack
+Parameters:
+  InfraStackName:
+    Default: large-upload
+    Type: String
+Resources:
+  Authorizer:
+    Properties:
+      CodeUri: s3://knakayama-bucket/b183952bce529e793ce200a59cbffd6b
+      Events:
+        Request:
+          Properties:
+            Sql:
+              Fn::Sub: 'SELECT * FROM ''${InfraStackName}/token/req''
+
+                '
+          Type: IoTRule
+        Response:
+          Properties:
+            Sql:
+              Fn::Sub: 'SELECT * FROM ''${InfraStackName}/token/res''
+
+                '
+          Type: IoTRule
+      FunctionName: authorizer
+      Handler: index.handler
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: ${InfraStackName}-AuthorizerRoleArn
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31

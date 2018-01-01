@@ -1,0 +1,28 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: JIT
+
+Parameters:
+  InfraStackName:
+    Type: String
+    Default: jit-infra
+  CaCertificateId:
+    Type: String
+
+Resources:
+  Jit:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jit
+      CodeUri: src/handlers/jit
+      Handler: index.handler
+      Runtime: python3.6
+      Role:
+        Fn::ImportValue: !Sub ${InfraStackName}-LambdaJitRoleArn
+      Events:
+        Activater:
+          Type: IoTRule
+          Properties:
+            Sql: !Sub |
+              SELECT * FROM '$aws/events/certificates/registered/${CaCertificateId}'

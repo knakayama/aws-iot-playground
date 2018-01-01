@@ -1,0 +1,51 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Large Upload Stack
+
+Parameters:
+  IoTCertificateId:
+    Type: String
+
+Resources:
+  IoTTing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: large-upload
+
+  IoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-iot-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:AssumeRoleWithCertificate
+            Resource:
+              - "*"
+
+  IoTPolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref IoTPolicy
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${IoTCertificateId}
+
+  IoTThingPrincipalAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      ThingName: !Ref IoTTing
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${IoTCertificateId}
+
+  S3UploadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: credentials.iot.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess

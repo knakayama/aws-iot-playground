@@ -1,0 +1,31 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Large Upload - AWS SAM Stack
+
+Parameters:
+  InfraStackName:
+    Type: String
+    Default: large-upload
+
+Resources:
+  Authorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: authorizer
+      CodeUri: src/handlers/authorizer
+      Handler: index.handler
+      Runtime: python3.6
+      Role:
+        Fn::ImportValue: !Sub ${InfraStackName}-AuthorizerRoleArn
+      Events:
+        Request:
+          Type: IoTRule
+          Properties:
+            Sql: !Sub |
+              SELECT * FROM '${InfraStackName}/token/req'
+        Response:
+          Type: IoTRule
+          Properties:
+            Sql: !Sub |
+              SELECT * FROM '${InfraStackName}/token/res'

@@ -1,0 +1,9 @@
+/.venv/
+*.crt
+*.key
+/tmp/
+ota-update/output/
+!ota-update/output/.gitkeep
+.sam/
+packaged.yml
+pki/

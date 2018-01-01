@@ -1,0 +1,99 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Large Upload - Infra Stack
+
+Parameters:
+  IoTCertificateId:
+    Type: String
+
+Resources:
+  IoTThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: large-upload-thing
+
+  IoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-iot-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:Publish
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${IoTThing}/token/req
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${IoTThing}/token/res
+
+  IoTPolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref IoTPolicy
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${IoTCertificateId}
+
+  IoTThingPrincipalAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      ThingName: !Ref IoTThing
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${IoTCertificateId}
+
+  Bucket:
+    Type: AWS::S3::Bucket
+
+  IoTRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: !Sub /${AWS::StackName}/s3/
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-iot-iam-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObjects
+                Resource: !Sub ${Bucket.Arn}/*
+
+  AuthorizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: !Sub /${AWS::StackName}/lambda/
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-lambda-iam-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: !GetAtt IoTRole.Arn
+
+Outputs:
+  IoTThingName:
+    Value: !Ref IoTThing
+    Export:
+      Name: !Sub ${AWS::StackName}-IoTThingName
+  AuthorizerRoleArn:
+    Value: !GetAtt AuthorizerRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-AuthorizerRoleArn
