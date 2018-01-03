@@ -1,0 +1,7 @@
+{
+  "status": "SUCCEEDED",
+  "expectedVersion": 2,
+  "includeJobExecutionState": true,
+  "includeJobDocument": true,
+  "clientToken": "hoge"
+}

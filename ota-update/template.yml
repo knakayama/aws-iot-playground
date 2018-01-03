@@ -10,7 +10,7 @@ Resources:
   IoTThing:
     Type: AWS::IoT::Thing
     Properties:
-      ThingName: ota-update-thing
+      ThingName: ota-update-thing-v2
 
   IoTPolicy:
     Type: AWS::IoT::Policy
@@ -50,7 +50,7 @@ Resources:
             Principal:
               Service: iot.amazonaws.com
             Action: sts:AssumeRole
-      Path: !Sub /${AWS::StackName}/
+      Path: !Sub /${AWS::StackName}/iot/
       Policies:
         - PolicyName: !Sub ${AWS::StackName}-iot-job-policy
           PolicyDocument:
