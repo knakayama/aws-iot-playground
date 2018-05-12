@@ -1,0 +1,69 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Sample Stack
+
+Parameters:
+  Thing:
+    Type: String
+    Default: my_thing_01
+
+Resources:
+  TestFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/test_func
+      Handler: index.handler
+      Runtime: python3.6
+      AutoPublishAlias: live
+
+  TestFuncLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TestFunc}
+
+  IoTTopicRuleGetThingShadowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: !Sub /${AWS::StackName}/
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-iot-topic-rule-get-thing-shadow-role-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iot:GetThingShadow
+                Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/${Thing}
+
+  IotTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: topic_rule
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: !Sub |
+          SELECT * FROM 'my/things/+/shadow/update'
+          WHERE door <> get_thing_shadow(topic(3), "${IoTTopicRuleGetThingShadowRole.Arn}").state.reported.door
+        Actions:
+          - Lambda:
+              FunctionArn: !Ref TestFunc.Alias
+
+  IoTTopicRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TestFunc.Alias
+      Principal: iot.amazonaws.com
+      SourceArn: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:rule/${IotTopicRule}
+      SourceAccount: !Ref AWS::AccountId
