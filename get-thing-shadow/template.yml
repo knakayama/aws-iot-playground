@@ -61,7 +61,8 @@ Resources:
       TopicRulePayload:
         RuleDisabled: false
         Sql: !Sub |
-          SELECT * FROM 'my/things/${Thing}/update' WHERE state.reported.door <> get_thing_shadow(${Thing}, "${IoTTopicRuleGetThingShadowRole.Arn}").state.reported.door
+          SELECT * FROM 'my/things/${Thing}/update'
+          WHERE state.reported.door <> get_thing_shadow(${Thing}, "${IoTTopicRuleGetThingShadowRole.Arn}").state.reported.door
         Actions:
           - Republish:
               Topic: !Sub $$aws/things/${Thing}/shadow/update
